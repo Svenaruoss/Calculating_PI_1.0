@@ -42,7 +42,9 @@ void LeibnizTask(void *param) {
     int counter                     = 0;
     int k                           = 0;
     double time_taken1              = 0;
-    clock_t start_time1             = clock(); // Startzeit erfassen
+    double start_time1              = 0.0;
+    double end_time1                = 0.0;
+    int Timeset                     = 0;
 
     while (1) {   
 
@@ -54,10 +56,15 @@ void LeibnizTask(void *param) {
                 k           = 0;
                 LeibnizPi   = 0.0;
                 time_taken1 = 0.0;
+                Timeset     = 0;
                 gctime_takenL = time_taken1;
                 xEventGroupClearBits(xControlleventgroup, RESET_BIT);
             }     
             if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
+                if (Timeset == 0){
+                    start_time1 = xTaskGetTickCount(); // Startzeit erfassen
+                    Timeset = 1;
+                }
                 LeibnizPi += sign / (2.0 * k + 1.0);
                 //Wechseln des Vorzeichen für nächste Stelle
                 sign = -sign;
@@ -66,8 +73,8 @@ void LeibnizTask(void *param) {
                 //Abgleich für die Zeit
                 if(Timefound == 0){
                     if (fabs((LeibnizPi * 4) - 3.14159) < 0.00001) {
-                        clock_t end_time = clock(); // Endzeit erfassen
-                        time_taken1 = (double)(end_time - start_time1) / CLOCKS_PER_SEC;
+                        end_time1 = xTaskGetTickCount();
+                        time_taken1 = (double)(end_time1 - start_time1) / CLOCKS_PER_SEC;
                         printf("Benötigte Zeit Leibnitz: %.6f Sekunden\n", time_taken1);
                         gctime_takenL = time_taken1;
                         Timefound = 1;
@@ -86,8 +93,10 @@ void LeibnizTask(void *param) {
 void NilakanthaTask(void *param) {
 
     int n                           = 1;
-    clock_t start_time2             = clock(); // Startzeit erfassen
     double time_taken2              = 0.0;
+    double start_time2              = 0.0;
+    double end_time2                = 0.;
+    int Timeset                     = 0;
 
        while (1) {
         
@@ -98,16 +107,22 @@ void NilakanthaTask(void *param) {
                 NilakanthaPi = 3.0;
                 time_taken2  = 0.0;
                 gctime_takenN = time_taken2;
+                //clock_t start_time2             = clock(); // Startzeit erfassen
+                Timeset = 0;
                 xEventGroupClearBits(xControlleventgroup, RESET_BIT);
         }
             if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
+                if (Timeset == 0){
+                    start_time2 = xTaskGetTickCount(); // Startzeit erfassen
+                    Timeset = 1;
+                }
                 NilakanthaPi += (n % 2 == 0 ? -4.0 : 4.0) / ((2.0 * n) * (2.0 * n + 1.0) * (2.0 * n + 2.0));
                 n++;
                 //Abgleich für die Zeit
                 if(Timefound == 0){
                     if (fabs(NilakanthaPi - 3.14159) < 0.00001) {
-                        clock_t end_time = clock(); // Endzeit erfassen
-                        time_taken2 = (double)(end_time - start_time2) / CLOCKS_PER_SEC;
+                        end_time2 = xTaskGetTickCount(); // Endzeit erfassen
+                        time_taken2 = (double)(end_time2 - start_time2) / CLOCKS_PER_SEC;
                         printf("Benötigte Zeit Nilakantha: %.6f Sekunden\n", time_taken2);
                         gctime_takenN = time_taken2;
                         Timefound = 1;
