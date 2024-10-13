@@ -63,19 +63,47 @@ void LeibnizTask(void *param) {
 }
 
 //----------------- Nilakantha Task --------------------------------------------------------------------
-/*void NilakanthaTask(void *param) {
+void NilakanthaTask(void *param) {
+
+    int n                           = 1;
+    clock_t start_time              = clock(); // Startzeit erfassen
+
+
+    TickType_t xstartTime = xTaskGetTickCount();
 
        while (1) {
 
+        if(xEventGroupGetBits(xControlleventgroup) & RESET_BIT){
+            n = 1;
+            NilakanthaPi = 3.0;
+            xEventGroupClearBits(xControlleventgroup, RESET_BIT);
+        }
+        
+        if((xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
+            if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
                 NilakanthaPi += (n % 2 == 0 ? -4.0 : 4.0) / ((2.0 * n) * (2.0 * n + 1.0) * (2.0 * n + 2.0));
                 n++;
                 if (n % 1000 == 0) {
                     printf("Nilakantha π: %.10f\n", NilakanthaPi);
                 }
                 //Abgleich für die Zeit
-}*/
-
-//----------------- Steuerung --------------------------------------------------------------------------
+                if(Timefound == 0){
+                    if (fabs(NilakanthaPi - 3.14159) < 0.00001) {
+                        clock_t end_time = clock(); // Endzeit erfassen
+                        double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+                        printf("Benötigte Zeit: %.6f Sekunden\n", time_taken);
+                        gctime_takenN = time_taken;
+                        Timefound = 1;
+                    }
+                }
+            }
+        }
+        else{
+            vTaskDelay(100/portTICK_PERIOD_MS);
+        }
+        vTaskDelay(1);
+    }
+}
 void ControllingTask(void *param){
     for(;;) {
         if(button_get_state(SW0, true) == SHORT_PRESSED) {
@@ -118,12 +146,12 @@ void app_main()
             1,                      //Priority
             NULL);                  //Taskhandle
 
-    /*xTaskCreate(NilakanthaTask,     //Subroutine
+    xTaskCreate(NilakanthaTask,     //Subroutine
             "NilakanthaTask",       //Name
             2*2048,                 //Stacksize
             NULL,                   //Parameters
             1,                      //Priority
-            NULL);                  //Taskhandle*/
+            NULL);                  //Taskhandle
 
     xTaskCreate(ControllingTask,    //Subroutine
             "ControllingTask",      //Name
