@@ -137,6 +137,8 @@ void InterfaceTask(void *param){
 
     char Nilkantha[13];
     char TimeNilkantha[13];
+    char Leibniz[13];
+    char TimeLeibniz[13];
 
     while (1){
         lcdFillScreen(BLACK);
@@ -148,6 +150,16 @@ void InterfaceTask(void *param){
             lcdDrawString(fx24M, 200, 100, Nilkantha, GREEN);
             sprintf(TimeNilkantha, "%f sek", gctime_takenN );
             lcdDrawString(fx24M, 200, 130, TimeNilkantha, YELLOW);
+        }
+
+        if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
+            lcdDrawString(fx32M, 10, 30, "PI-Calculator", WHITE);
+            lcdDrawString(fx24M, 10, 100, "Leibniz-Pi:", GREEN);
+            lcdDrawString(fx24M, 10, 130, "Calculate-Time:", YELLOW);
+            sprintf(Leibniz, "%.10f", LeibnizPi*4);
+            lcdDrawString(fx24M, 200, 100, Leibniz, GREEN);
+            sprintf(TimeLeibniz, "%f sek", gctime_takenL );
+            lcdDrawString(fx24M, 200, 130, TimeLeibniz, YELLOW);
         }
 
         lcdUpdateVScreen();
