@@ -28,8 +28,13 @@ double gctime_takenN    = 0.0;
 //----------------- Leibniz Task -----------------------------------------------------------------------
 void LeibnizTask(void *param) {
 
-    while (1) {      
+    double sign                     = 1;
+    int counter                     = 0;
+    int k                           = 0;
+    clock_t start_time              = clock(); // Startzeit erfassen
 
+    while (1) {
+ 
         if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
             if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
                 LeibnizPi += sign / (2.0 * k + 1.0);
@@ -37,13 +42,24 @@ void LeibnizTask(void *param) {
                 //Wechseln des Vorzeichen für nächste Stelle
                 sign = -sign;
                 k++;
+                counter++;
+                //Abgleich für die Zeit
+                if(Timefound == 0){
+                    if (fabs(LeibnizPi - 3.14159) < 0.00001) {
+                        clock_t end_time = clock(); // Endzeit erfassen
+                        double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+                        printf("Benötigte Zeit: %.5f Sekunden\n", time_taken);
+                        gctime_takenL = time_taken;
+                        Timefound = 1;
+                    }
+                }
             }
         }
         else{
             vTaskDelay(100/portTICK_PERIOD_MS);
         }
         vTaskDelay(1);
-    } 
+    }  
 }
 
 //----------------- Nilakantha Task --------------------------------------------------------------------
