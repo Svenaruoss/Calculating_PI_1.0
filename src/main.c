@@ -132,6 +132,29 @@ void ControllingTask(void *param){
     }
 }
 
+//----------------- LCD --------------------------------------------------------------------------------
+void InterfaceTask(void *param){
+
+    char Nilkantha[13];
+    char TimeNilkantha[13];
+
+    while (1){
+        lcdFillScreen(BLACK);
+        if((xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
+            lcdDrawString(fx32M, 10, 30, "PI-Calculator", WHITE);
+            lcdDrawString(fx24M, 10, 100, "Nilkantha-Pi:", GREEN);
+            lcdDrawString(fx24M, 10, 130, "Calculate-Time:", YELLOW);
+            sprintf(Nilkantha, "%f", NilakanthaPi );
+            lcdDrawString(fx24M, 200, 100, Nilkantha, GREEN);
+            sprintf(TimeNilkantha, "%f sek", gctime_takenN );
+            lcdDrawString(fx24M, 200, 130, TimeNilkantha, YELLOW);
+        }
+
+        lcdUpdateVScreen();
+        vTaskDelay(500/portTICK_PERIOD_MS);
+    }    
+}
+
 void app_main()
 {
     //Initialize Eduboard2 BSP
@@ -158,6 +181,13 @@ void app_main()
             2*2048,                 //Stacksize
             NULL,                   //Parameters
             10,                     //Priority
+            NULL);                  //Taskhandle
+
+    xTaskCreate(InterfaceTask,      //Subroutine
+            "ControllingTask",      //Name
+            2*2048,                 //Stacksize
+            NULL,                   //Parameters
+            7,                      //Priority
             NULL);                  //Taskhandle
 
 }
