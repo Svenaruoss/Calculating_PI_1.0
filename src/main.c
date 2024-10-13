@@ -1,3 +1,13 @@
+/********************************************************************************************* */
+//    PI Calculator
+//    Author: Svenja Ruoss
+//    Juventus Technikerschule
+//    Version: 1.0.0
+//    
+//   
+//    
+//   
+/********************************************************************************************* */
 #include "eduboard2.h"
 #include "memon.h"
 
@@ -34,7 +44,16 @@ void LeibnizTask(void *param) {
     clock_t start_time              = clock(); // Startzeit erfassen
 
     while (1) {
- 
+
+        //Reset
+        if(xEventGroupGetBits(xControlleventgroup) & RESET_BIT){
+            sign        = 1;
+            counter     = 0;
+            k           = 0;
+            LeibnizPi   = 0.0;
+            xEventGroupClearBits(xControlleventgroup, RESET_BIT);
+        }        
+
         if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
             if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
                 LeibnizPi += sign / (2.0 * k + 1.0);
@@ -59,7 +78,7 @@ void LeibnizTask(void *param) {
             vTaskDelay(100/portTICK_PERIOD_MS);
         }
         vTaskDelay(1);
-    }  
+    } 
 }
 
 //----------------- Nilakantha Task --------------------------------------------------------------------
@@ -104,6 +123,8 @@ void NilakanthaTask(void *param) {
         vTaskDelay(1);
     }
 }
+
+//----------------- Steuerung --------------------------------------------------------------------------
 void ControllingTask(void *param){
     for(;;) {
         if(button_get_state(SW0, true) == SHORT_PRESSED) {
@@ -135,10 +156,10 @@ void ControllingTask(void *param){
 //----------------- LCD --------------------------------------------------------------------------------
 void InterfaceTask(void *param){
 
-    char Nilkantha[13];
-    char TimeNilkantha[13];
     char Leibniz[13];
+    char Nilkantha[13];
     char TimeLeibniz[13];
+    char TimeNilkantha[13];
 
     while (1){
         lcdFillScreen(BLACK);
@@ -151,7 +172,6 @@ void InterfaceTask(void *param){
             sprintf(TimeNilkantha, "%f sek", gctime_takenN );
             lcdDrawString(fx24M, 200, 130, TimeNilkantha, YELLOW);
         }
-
         if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
             lcdDrawString(fx32M, 10, 30, "PI-Calculator", WHITE);
             lcdDrawString(fx24M, 10, 100, "Leibniz-Pi:", GREEN);
@@ -175,6 +195,7 @@ void InterfaceTask(void *param){
         vTaskDelay(500/portTICK_PERIOD_MS);
     }    
 }
+
 
 void app_main()
 {
