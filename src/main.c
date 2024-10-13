@@ -66,7 +66,26 @@ void Leibniz_Calculator(void* param){
 }
 
 //----------------- Nilakantha-Calclator ----------------------------------------------------------------------
+void Nilakantha_Calculator(void* param){
 
+    if(ChangeVariable == 1){
+        int k = 1;
+        while (1) {
+            EventBits_t uxBits = xEventGroupWaitBits(xControlleventgroup, BIT_Start | BIT_End | BIT_SetBack, pdTRUE, pdFALSE, portMAX_DELAY);
+            if (uxBits & BIT_Start) {
+                NilakanthaPI += (k % 2 == 0 ? -4.0 : 4.0) / ((2 * k) * (2 * k + 1) * (2 * k + 2));
+                k++;
+                printf("Nilakantha π: %.10f\n", NilakanthaPI);
+                vTaskDelay(pdMS_TO_TICKS(500));
+            } else if (uxBits & BIT_End) {
+                vTaskSuspend(NULL);
+            } else if (uxBits & BIT_SetBack) {
+                NilakanthaPI = 3.0;
+                k = 1;
+            }
+        }
+    }
+}
 //----------------- Task's ------------------------------------------------------------------------
 void app_main()
 {
@@ -84,5 +103,12 @@ void app_main()
                 NULL,                   //Parameters
                 1,                      //Priority
                 NULL);                  //Taskhandle
+
+    xTaskCreate(NilakanthaTask,         //Subroutine
+        "NilakanthaTask",               //Name
+        2*2048,                         //Stacksize
+        NULL,                           //Parameters
+        1,                              //Priority
+        NULL);                          //Taskhandle
 
 }
