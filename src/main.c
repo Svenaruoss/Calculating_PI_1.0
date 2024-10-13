@@ -1,142 +1,113 @@
-/********************************************************************************************* */
-//    PI Calculator
-//    Author: Svenja Ruoss
-//    Juventus Technikerschule
-//    Version: 1.0.0
-//    
-//   
-//    
-//   
-/********************************************************************************************* */
-#include                        "eduboard2.h"
-#include                        "memon.h"
+#include "eduboard2.h"
+#include "memon.h"
 
-#include                        "math.h"
+#include "math.h"
 
-#define TAG                     "PI_Calculator"
-
-#define SteuerTask              "SteuerTask"
-#define LeibnizTask             "LeibnizTask"   
-#define NilakanthaTask          "OtherTask"
+#define TAG "PI Calcolator"
 
 #define UPDATETIME_MS 100
 
-//----------------- Switch -----------------------------------------------------------------------------
-#define ControllingMenu
-#define ButtonON
-
-//----------------- Global Variable --------------------------------------------------------------------
-double LeibnizPi                = 0.0;
-double NilakanthaPI             = 0.0;
-unsigned char ChangeVariable    = 0;    //0 für Leibniz, 1 für Nilakantha
-
 //----------------- EventBits --------------------------------------------------------------------------
-#define BIT_change      1 << 0
-#define BIT_Start       1 << 1
-#define BIT_End         1 << 2
-#define BIT_SetBack     1 << 3
+#define START_BIT               (1 << 0)
+#define STOP_BIT                (1 << 1)
+#define RESET_BIT               (1 << 2)
+#define SWITCH_ALGO_BIT         (1 << 3)
+#define UPDATE_DISPLAY_BIT      (1 << 4)
 
-EventGroupHandle_t xControlleventgroup;
+EventGroupHandle_t xControlleventgroup = NULL;
 
-//----------------- Leibniz-Calcalator ------------------------------------------------------------------------
+//----------------- Global Variables -------------------------------------------------------------------
+int Timefound           = 0;
+int AlgoBit             = 0;
+double LeibnizPi        = 0.0;
+double NilakanthaPi     = 3.0;
+double gctime_takenL    = 0.0;
+double gctime_takenN    = 0.0;
 
-void Leibniz_Calculator(void* param){
 
-    if(ChangeVariable == 0){
-        int k = 0;
-        while (1) {
-            EventBits_t uxBits = xEventGroupWaitBits(xControlleventgroup, BIT_Start | BIT_End | BIT_SetBack, pdTRUE, pdFALSE, portMAX_DELAY);
+//----------------- Leibniz Task -----------------------------------------------------------------------
+void LeibnizTask(void *param) {
 
-            if (uxBits & BIT_Start) {
-                LeibnizPi += (k % 2 == 0 ? 1.0 : -1.0) / (2 * k + 1);
+    while (1) {      
+
+        if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
+            if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
+                LeibnizPi += sign / (2.0 * k + 1.0);
+                printf("LeibnizPi = %.15f\n", LeibnizPi * 4);
+                //Wechseln des Vorzeichen für nächste Stelle
+                sign = -sign;
                 k++;
-                printf("Leibniz π: %.10f\n", LeibnizPi * 4);
-                vTaskDelay(pdMS_TO_TICKS(500));
-                ESP_LOGI(TAG, "%lf", LeibnizPi);
-            } 
-            else if (uxBits & BIT_End) {
-                vTaskSuspend(NULL);
-            } else if (uxBits & BIT_SetBack) {
-                LeibnizPi = 0.0;
-                k = 0;
             }
         }
-    }
+        else{
+            vTaskDelay(100/portTICK_PERIOD_MS);
+        }
+        vTaskDelay(1);
+    } 
 }
 
-//----------------- Nilakantha-Calclator ----------------------------------------------------------------------
-void Nilakantha_Calculator(void* param){
+//----------------- Nilakantha Task --------------------------------------------------------------------
+/*void NilakanthaTask(void *param) {
 
-    if(ChangeVariable == 1){
-        int k = 1;
-        while (1) {
-            EventBits_t uxBits = xEventGroupWaitBits(xControlleventgroup, BIT_Start | BIT_End | BIT_SetBack, pdTRUE, pdFALSE, portMAX_DELAY);
-            if (uxBits & BIT_Start) {
-                NilakanthaPI += (k % 2 == 0 ? -4.0 : 4.0) / ((2 * k) * (2 * k + 1) * (2 * k + 2));
-                k++;
-                printf("Nilakantha π: %.10f\n", NilakanthaPI);
-                vTaskDelay(pdMS_TO_TICKS(500));
-            } else if (uxBits & BIT_End) {
-                vTaskSuspend(NULL);
-            } else if (uxBits & BIT_SetBack) {
-                NilakanthaPI = 3.0;
-                k = 1;
+       while (1) {
+
+                NilakanthaPi += (n % 2 == 0 ? -4.0 : 4.0) / ((2.0 * n) * (2.0 * n + 1.0) * (2.0 * n + 2.0));
+                n++;
+                if (n % 1000 == 0) {
+                    printf("Nilakantha π: %.10f\n", NilakanthaPi);
+                }
+                //Abgleich für die Zeit
+}*/
+
+//----------------- Steuerung --------------------------------------------------------------------------
+void ControllingTask(void *param){
+    for(;;) {
+        if(button_get_state(SW0, true) == SHORT_PRESSED) {
+            xEventGroupSetBits(xControlleventgroup, START_BIT);
+            xEventGroupClearBits(xControlleventgroup, STOP_BIT);
+        }
+        if(button_get_state(SW1, true) == SHORT_PRESSED) {
+            xEventGroupSetBits(xControlleventgroup, STOP_BIT);
+            xEventGroupClearBits(xControlleventgroup, START_BIT);
+        }
+        if(button_get_state(SW2, true) == SHORT_PRESSED) {
+            xEventGroupSetBits(xControlleventgroup, RESET_BIT);
+            Timefound = 0;
+        }
+        if(button_get_state(SW3, true) == SHORT_PRESSED) {
+            if(AlgoBit == 0){
+                xEventGroupSetBits(xControlleventgroup, SWITCH_ALGO_BIT);
+                AlgoBit = 1;
+            }
+            else{
+                xEventGroupClearBits(xControlleventgroup, SWITCH_ALGO_BIT);
+                AlgoBit = 0;
             }
         }
+        vTaskDelay(100/portTICK_PERIOD_MS);
     }
 }
 
-//----------------- Steuer-Task ------------------------------------------------------------------------
-void ControllingTask(void* param){
-
-     TickType_t xStartTime = xTaskGetTickCount();
-     lcdFillScreen(BLACK);
-
-    if(button_get_state(SW0, true) == SHORT_PRESSED){
-        xEventGroupSetBits(xControlleventgroup, BIT_Start);
-        xEventGroupClearBits(xControlleventgroup, BIT_End);
-    }
-
-    if(button_get_state(SW1, true) == SHORT_PRESSED){
-        xEventGroupSetBits(xControlleventgroup, BIT_End);
-        xEventGroupClearBits(xControlleventgroup, BIT_Start);
-    }
-    if(button_get_state(SW2, true) == SHORT_PRESSED){
-        xEventGroupSetBits(xControlleventgroup, BIT_SetBack);
-    }
-    if(button_get_state(SW3, true) == SHORT_PRESSED){
-        if(xEventGroupGetBits(xControlleventgroup) & BIT_change) {
-            xEventGroupClearBits(xControlleventgroup, BIT_change);
-        }
-        if(xEventGroupGetBits(xControlleventgroup) & !BIT_change) {
-            xEventGroupSetBits(xControlleventgroup, BIT_change);
-        }
-    }
-}
-//----------------- Task's ------------------------------------------------------------------------
 void app_main()
 {
-
-    lcdFillScreen(BLACK);
-    xControlleventgroup = xEventGroupCreate();
     //Initialize Eduboard2 BSP
     eduboard2_init();
     
-    //Create templateTask
+    xControlleventgroup = xEventGroupCreate();
 
-    xTaskCreate(Leibniz_Calculator,     //Subroutine
-                "Leibniz-Rechner",      //Name
-                2*2048,                 //Stacksize
-                NULL,                   //Parameters
-                1,                      //Priority
-                NULL);                  //Taskhandle
+    xTaskCreate(LeibnizTask,        //Subroutine
+            "LeibnizTask",          //Name
+            2*2048,                 //Stacksize
+            NULL,                   //Parameters
+            1,                      //Priority
+            NULL);                  //Taskhandle
 
-    xTaskCreate(NilakanthaTask,         //Subroutine
-        "NilakanthaTask",               //Name
-        2*2048,                         //Stacksize
-        NULL,                           //Parameters
-        1,                              //Priority
-        NULL);                          //Taskhandle
+    /*xTaskCreate(NilakanthaTask,     //Subroutine
+            "NilakanthaTask",       //Name
+            2*2048,                 //Stacksize
+            NULL,                   //Parameters
+            1,                      //Priority
+            NULL);                  //Taskhandle*/
 
     xTaskCreate(ControllingTask,    //Subroutine
             "ControllingTask",      //Name
