@@ -87,7 +87,7 @@ void Nilakantha_Calculator(void* param){
 }
 
 //----------------- Steuer-Task ------------------------------------------------------------------------
-void Steuer_Task(void* param){
+void ControllingTask(void* param){
 
      TickType_t xStartTime = xTaskGetTickCount();
      lcdFillScreen(BLACK);
@@ -137,5 +137,12 @@ void app_main()
         NULL,                           //Parameters
         1,                              //Priority
         NULL);                          //Taskhandle
+
+    xTaskCreate(ControllingTask,    //Subroutine
+            "ControllingTask",      //Name
+            2*2048,                 //Stacksize
+            NULL,                   //Parameters
+            10,                     //Priority
+            NULL);                  //Taskhandle
 
 }
