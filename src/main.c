@@ -37,7 +37,6 @@ unsigned char ChangeVariable    = 0;    //0 für Leibniz, 1 für Nilakantha
 #define BIT_SetBack     1 << 3
 
 EventGroupHandle_t xControlleventgroup;
-//----------------- Steuer-Task ------------------------------------------------------------------------
 
 //----------------- Leibniz-Calcalator ------------------------------------------------------------------------
 
@@ -83,6 +82,34 @@ void Nilakantha_Calculator(void* param){
                 NilakanthaPI = 3.0;
                 k = 1;
             }
+        }
+    }
+}
+
+//----------------- Steuer-Task ------------------------------------------------------------------------
+void Steuer_Task(void* param){
+
+     TickType_t xStartTime = xTaskGetTickCount();
+     lcdFillScreen(BLACK);
+
+    if(button_get_state(SW0, true) == SHORT_PRESSED){
+        xEventGroupSetBits(xControlleventgroup, BIT_Start);
+        xEventGroupClearBits(xControlleventgroup, BIT_End);
+    }
+
+    if(button_get_state(SW1, true) == SHORT_PRESSED){
+        xEventGroupSetBits(xControlleventgroup, BIT_End);
+        xEventGroupClearBits(xControlleventgroup, BIT_Start);
+    }
+    if(button_get_state(SW2, true) == SHORT_PRESSED){
+        xEventGroupSetBits(xControlleventgroup, BIT_SetBack);
+    }
+    if(button_get_state(SW3, true) == SHORT_PRESSED){
+        if(xEventGroupGetBits(xControlleventgroup) & BIT_change) {
+            xEventGroupClearBits(xControlleventgroup, BIT_change);
+        }
+        if(xEventGroupGetBits(xControlleventgroup) & !BIT_change) {
+            xEventGroupSetBits(xControlleventgroup, BIT_change);
         }
     }
 }
