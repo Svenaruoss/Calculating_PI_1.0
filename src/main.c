@@ -162,6 +162,15 @@ void InterfaceTask(void *param){
             lcdDrawString(fx24M, 200, 130, TimeLeibniz, YELLOW);
         }
 
+        lcdDrawRect(0, 219, 119, 319,   GRAY);
+        lcdDrawString(fx16M, 10, 280, "S0 = Ein", WHITE);
+        lcdDrawRect(120, 219, 239, 319, GRAY);
+        lcdDrawString(fx16M, 130, 280, "S1 = Aus", WHITE);
+        lcdDrawRect(240, 219, 359, 319, GRAY);
+        lcdDrawString(fx16M, 250, 280, "S2 = Reset", WHITE);
+        lcdDrawRect(360, 219, 479, 319, GRAY);
+        lcdDrawString(fx16M, 370, 280, "S3 = Switch", WHITE);
+
         lcdUpdateVScreen();
         vTaskDelay(500/portTICK_PERIOD_MS);
     }    
