@@ -41,7 +41,7 @@ void LeibnizTask(void *param) {
     double sign                     = 1;
     int counter                     = 0;
     int k                           = 0;
-    clock_t start_time1              = clock(); // Startzeit erfassen
+    clock_t start_time1             = clock(); // Startzeit erfassen
 
     while (1) {
 
@@ -55,6 +55,14 @@ void LeibnizTask(void *param) {
         }        
 
         if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
+            //Reset
+            if(xEventGroupGetBits(xControlleventgroup) & RESET_BIT){
+                sign        = 1;
+                counter     = 0;
+                k           = 0;
+                LeibnizPi   = 0.0;
+                xEventGroupClearBits(xControlleventgroup, RESET_BIT);
+            }     
             if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
                 LeibnizPi += sign / (2.0 * k + 1.0);
                 //Wechseln des Vorzeichen für nächste Stelle
@@ -65,9 +73,9 @@ void LeibnizTask(void *param) {
                 if(Timefound == 0){
                     if (fabs((LeibnizPi * 4) - 3.14159) < 0.00001) {
                         clock_t end_time = clock(); // Endzeit erfassen
-                        double time_taken = (double)(end_time - start_time1) / CLOCKS_PER_SEC;
-                        printf("Benötigte Zeit Leibnitz: %.6f Sekunden\n", time_taken);
-                        gctime_takenL = time_taken;
+                        double time_taken1 = (double)(end_time - start_time1) / CLOCKS_PER_SEC;
+                        printf("Benötigte Zeit Leibnitz: %.6f Sekunden\n", time_taken1);
+                        gctime_takenL = time_taken1;
                         Timefound = 1;
                     }
                 }
@@ -87,14 +95,13 @@ void NilakanthaTask(void *param) {
     clock_t start_time2             = clock(); // Startzeit erfassen
 
        while (1) {
-
-        if(xEventGroupGetBits(xControlleventgroup) & RESET_BIT){
-            n = 1;
-            NilakanthaPi = 3.0;
-            xEventGroupClearBits(xControlleventgroup, RESET_BIT);
-        }
         
         if((xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
+             if(xEventGroupGetBits(xControlleventgroup) & RESET_BIT){
+                n = 1;
+                NilakanthaPi = 3.0;
+                xEventGroupClearBits(xControlleventgroup, RESET_BIT);
+        }
             if(xEventGroupGetBits(xControlleventgroup) & START_BIT) {
                 NilakanthaPi += (n % 2 == 0 ? -4.0 : 4.0) / ((2.0 * n) * (2.0 * n + 1.0) * (2.0 * n + 2.0));
                 n++;
@@ -102,9 +109,9 @@ void NilakanthaTask(void *param) {
                 if(Timefound == 0){
                     if (fabs(NilakanthaPi - 3.14159) < 0.00001) {
                         clock_t end_time = clock(); // Endzeit erfassen
-                        double time_taken = (double)(end_time - start_time2) / CLOCKS_PER_SEC;
-                        printf("Benötigte Zeit Nilakantha: %.6f Sekunden\n", time_taken);
-                        gctime_takenN = time_taken;
+                        double time_taken2 = (double)(end_time - start_time2) / CLOCKS_PER_SEC;
+                        printf("Benötigte Zeit Nilakantha: %.6f Sekunden\n", time_taken2);
+                        gctime_takenN = time_taken2;
                         //gctime_takenN = time_taken;
                         Timefound = 1;
                     }
@@ -132,6 +139,8 @@ void ControllingTask(void *param){
         if(button_get_state(SW2, true) == SHORT_PRESSED) {
             xEventGroupSetBits(xControlleventgroup, RESET_BIT);
             Timefound = 0;
+            gctime_takenN = 0;
+            gctime_takenL = 0;
         }
         if(button_get_state(SW3, true) == SHORT_PRESSED) {
             if(AlgoBit == 0){
@@ -168,7 +177,7 @@ void InterfaceTask(void *param){
         }
         if(!(xEventGroupGetBits(xControlleventgroup) & SWITCH_ALGO_BIT)){
             lcdDrawString(fx32M, 10, 30, "PI-Calculator", WHITE);
-            lcdDrawString(fx24M, 10, 100, "Leibniz-Pi:", GREEN);
+            lcdDrawString(fx24M, 10, 100, "Leibnitz-Pi:", GREEN);
             lcdDrawString(fx24M, 10, 130, "Calculate-Time:", YELLOW);
             sprintf(Leibniz, "%.10f", LeibnizPi*4);
             lcdDrawString(fx24M, 200, 100, Leibniz, GREEN);
